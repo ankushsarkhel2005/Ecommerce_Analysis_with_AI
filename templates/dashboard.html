@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI Analytics Dashboard | E-Commerce Sales Intelligence</title>
+    <meta name="description" content="Professional Power BI Sales Analytics Dashboard for E-Commerce data. Interactive KPIs, DAX measures, category and product analysis.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Chart.js for interactive dashboard visuals -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Stylesheets -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon pbi-brand-icon">
+                        <i data-lucide="bar-chart-2"></i>
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-title">Power BI Analytics</span>
+                        <span class="brand-subtitle">E-Commerce BI Suite</span>
+                    </div>
+                </div>
+                <button class="mobile-close-btn" id="mobileCloseBtn" aria-label="Close sidebar">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- Primary App Navigation -->
+            <div class="sidebar-nav-menu">
+                <a href="/" class="nav-item">
+                    <div class="nav-icon-wrap"><i data-lucide="bot"></i></div>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="/dashboard" class="nav-item active">
+                    <div class="nav-icon-wrap"><i data-lucide="bar-chart-3"></i></div>
+                    <span>Power BI Dashboard</span>
+                    <span class="nav-pill-badge">Live</span>
+                </a>
+            </div>
+
+            <!-- Interactive Slicers / Filters Section -->
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <i data-lucide="filter"></i>
+                    <span>Dashboard Slicers</span>
+                </div>
+                <div class="slicers-container">
+                    <div class="slicer-group">
+                        <label class="slicer-label" for="categorySlicer">Category</label>
+                        <select id="categorySlicer" class="slicer-select">
+                            <option value="All">All Categories</option>
+                            {% for cat in data.slicer_options.categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="slicer-group">
+                        <label class="slicer-label" for="citySlicer">City / Location</label>
+                        <select id="citySlicer" class="slicer-select">
+                            <option value="All">All Cities</option>
+                            {% for city in data.slicer_options.cities %}
+                            <option value="{{ city }}">{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="slicer-group">
+                        <label class="slicer-label" for="statusSlicer">Order Status</label>
+                        <select id="statusSlicer" class="slicer-select">
+                            <option value="All">All Statuses</option>
+                            {% for st in data.slicer_options.statuses %}
+                            <option value="{{ st }}">{{ st }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button class="btn btn-secondary btn-reset-filters" id="resetFiltersBtn">
+                        <i data-lucide="rotate-ccw"></i>
+                        <span>Reset Filters</span>
+                    </button>
+                </div>
+
+                <!-- DAX Formulas Shortcut Button -->
+                <div class="dax-shortcut-box">
+                    <button class="btn btn-dax-guide" id="openDaxModalBtn">
+                        <i data-lucide="code"></i>
+                        <span>View DAX Measures (11)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Database & System Health Card -->
+            <div class="sidebar-footer">
+                <div class="db-status-card" id="dbStatusCard">
+                    <div class="status-header">
+                        <div class="status-indicator-wrapper">
+                            <span class="status-dot {{ db_status.status_class }}"></span>
+                            <span class="status-name">{{ db_status.status_label }}</span>
+                        </div>
+                    </div>
+                    <div class="status-details">
+                        <div class="status-row">
+                            <span class="status-label">Database:</span>
+                            <span class="status-value highlight">{{ db_status.database or 'ecommerce_db' }}</span>
+                        </div>
+                        <div class="status-row">
+                            <span class="status-label">Table:</span>
+                            <span class="status-value highlight">{{ db_status.table }}</span>
+                        </div>
+                        <div class="status-row">
+                            <span class="status-label">Records:</span>
+                            <span class="status-value">{{ "{:,}".format(db_status.total_records) }} rows</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Viewport -->
+        <main class="main-content dashboard-main">
+            <!-- Top Header Navigation -->
+            <header class="top-nav">
+                <div class="nav-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open sidebar">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="header-title-wrap">
+                        <h1 class="header-title">E-Commerce Executive Sales BI</h1>
+                        <span class="badge badge-dataset">
+                            <i data-lucide="database"></i> MySQL: ecommerce_db.orders
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="nav-right">
+                    <!-- View Mode Toggle -->
+                    <div class="view-mode-toggle">
+                        <button class="toggle-btn active" id="tabVisualizerBtn" data-target="viewVisualizer">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span>BI Visualizer</span>
+                        </button>
+                        <button class="toggle-btn" id="tabEmbedBtn" data-target="viewEmbed">
+                            <i data-lucide="external-link"></i>
+                            <span>Power BI Cloud Embed</span>
+                        </button>
+                    </div>
+
+                    <a href="/" class="btn btn-ghost" title="Switch to AI Assistant Chat">
+                        <i data-lucide="bot"></i>
+                        <span>AI Assistant</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Dashboard Content Container -->
+            <div class="dashboard-scrollable-content">
+                
+                <!-- VIEW 1: INTERACTIVE BI VISUALIZER -->
+                <div class="dashboard-view active" id="viewVisualizer">
+                    
+                    <!-- KPI Cards Summary Grid (7 Executive Measures) -->
+                    <section class="kpi-summary-section">
+                        <div class="pbi-kpi-grid">
+                            <!-- KPI 1: Total Sales -->
+                            <div class="pbi-kpi-card kpi-glow-emerald">
+                                <div class="pbi-kpi-top">
+                                    <span class="pbi-kpi-title">Total Gross Sales</span>
+                                    <div class="pbi-kpi-icon icon-emerald"><i data-lucide="circle-dollar-sign"></i></div>
+                                </div>
+                                <div class="pbi-kpi-value" id="kpiSales">₹{{ "{:,.2f}".format(data.kpis.total_sales or 3906743.0) }}</div>
+                                <div class="pbi-kpi-meta">
+                                    <span class="kpi-tag tag-emerald"><i data-lucide="trending-up"></i> DAX: SUM(orders[Sales])</span>
+                                </div>
+                            </div>
+
+                            <!-- KPI 2: Total Orders -->
+                            <div class="pbi-kpi-card kpi-glow-indigo">
+                                <div class="pbi-kpi-top">
+                                    <span class="pbi-kpi-title">Total Orders</span>
+                                    <div class="pbi-kpi-icon icon-indigo"><i data-lucide="shopping-bag"></i></div>
+                                </div>
+                                <div class="pbi-kpi-value" id="kpiOrders">{{ "{:,}".format(data.kpis.total_orders or 524) }}</div>
+                                <div class="pbi-kpi-meta">
+                                    <span class="kpi-tag tag-indigo">DAX: DISTINCTCOUNT([Order_ID])</span>
+                                </div>
+                            </div>
+
+                            <!-- KPI 3: Total Customers -->
+                            <div class="pbi-kpi-card kpi-glow-cyan">
+                                <div class="pbi-kpi-top">
+                                    <span class="pbi-kpi-title">Unique Customers</span>
+                                    <div class="pbi-kpi-icon icon-cyan"><i data-lucide="users"></i></div>
+                                </div>
+                                <div class="pbi-kpi-value" id="kpiCustomers">{{ "{:,}".format(data.kpis.total_customers or 524) }}</div>
+                                <div class="pbi-kpi-meta">
+                                    <span class="kpi-tag tag-cyan">DAX: DISTINCTCOUNT([Customer_Name])</span>
+                                </div>
+                            </div>
+
+                            <!-- KPI 4: Total Quantity -->
+                            <div class="pbi-kpi-card kpi-glow-amber">
+                                <div class="pbi-kpi-top">
+                                    <span class="pbi-kpi-title">Total Quantity Sold</span>
+                                    <div class="pbi-kpi-icon icon-amber"><i data-lucide="package"></i></div>
+                                </div>
+                                <div class="pbi-kpi-value" id="kpiQty">{{ "{:,}".format(data.kpis.total_quantity or 1572) }} Units</div>
+                                <div class="pbi-kpi-meta">
+                                    <span class="kpi-tag tag-amber">DAX: SUM(orders[Qty])</span>
+                                </div>
+                            </div>
+
+                            <!-- KPI 5: Average Order Value -->
+                            <div class="pbi-kpi-card kpi-glow-violet">
+                                <div class="pbi-kpi-top">
+                                    <span class="pbi-kpi-title">Avg Order Value (AOV)</span>
+                                    <div class="pbi-kpi-icon icon-violet"><i data-lucide="credit-card"></i></div>
+                                </div>
+                                <div class="pbi-kpi-value" id="kpiAOV">₹{{ "{:,.2f}".format(data.kpis.avg_order_value or 7455.62) }}</div>
+                                <div class="pbi-kpi-meta">
+                                    <span class="kpi-tag tag-violet">DAX: DIVIDE([Sales], [Orders])</span>
+                                </div>
+                            </div>
+
+                            <!-- KPI 6: Average Discount -->
+                            <div class="pbi-kpi-card kpi-glow-rose">
+                                <div class="pbi-kpi-top">
+                                    <span class="pbi-kpi-title">Avg Discount Rate</span>
+                                    <div class="pbi-kpi-icon icon-rose"><i data-lucide="percent"></i></div>
+                                </div>
+                                <div class="pbi-kpi-value" id="kpiDiscount">{{ "{:.1f}%".format(data.kpis.avg_discount or 10.0) }}</div>
+                                <div class="pbi-kpi-meta">
+                                    <span class="kpi-tag tag-rose">DAX: AVERAGE([Discount])</span>
+                                </div>
+                            </div>
+
+                            <!-- KPI 7: Total Profit -->
+                            <div class="pbi-kpi-card kpi-glow-emerald">
+                                <div class="pbi-kpi-top">
+                                    <span class="pbi-kpi-title">Estimated Net Profit</span>
+                                    <div class="pbi-kpi-icon icon-emerald"><i data-lucide="award"></i></div>
+                                </div>
+                                <div class="pbi-kpi-value" id="kpiProfit">₹{{ "{:,.2f}".format(data.kpis.total_profit or 471222.34) }}</div>
+                                <div class="pbi-kpi-meta">
+                                    <span class="kpi-tag tag-emerald">DAX: SUM(orders[Profit])</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Charts Grid: Row 1 -->
+                    <section class="charts-grid-row">
+                        <!-- Chart 1: Monthly Revenue Trend -->
+                        <div class="pbi-chart-card chart-span-8">
+                            <div class="chart-header">
+                                <div class="chart-title-wrap">
+                                    <i data-lucide="trending-up"></i>
+                                    <h3 class="chart-title">Monthly Revenue & Profit Trend</h3>
+                                </div>
+                                <span class="chart-badge">DAX: Sales by Month</span>
+                            </div>
+                            <div class="chart-body">
+                                <canvas id="monthlyTrendChart" height="230"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Category Breakdown -->
+                        <div class="pbi-chart-card chart-span-4">
+                            <div class="chart-header">
+                                <div class="chart-title-wrap">
+                                    <i data-lucide="pie-chart"></i>
+                                    <h3 class="chart-title">Category Revenue Share</h3>
+                                </div>
+                                <span class="chart-badge">4 Categories</span>
+                            </div>
+                            <div class="chart-body donut-chart-container">
+                                <div class="donut-canvas-box">
+                                    <canvas id="categoryDonutChart"></canvas>
+                                </div>
+                                <div class="category-legend-list" id="categoryLegendList">
+                                    {% for cat in data.categories %}
+                                    <div class="legend-item">
+                                        <span class="legend-cat-name">{{ cat.Category }}</span>
+                                        <span class="legend-cat-val">₹{{ "{:,.1f}L".format(cat.total_sales / 100000) }} ({{ cat.share_pct }}%)</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Charts Grid: Row 2 -->
+                    <section class="charts-grid-row">
+                        <!-- Chart 3: Top 10 Products -->
+                        <div class="pbi-chart-card chart-span-6">
+                            <div class="chart-header">
+                                <div class="chart-title-wrap">
+                                    <i data-lucide="package-check"></i>
+                                    <h3 class="chart-title">Top Products by Revenue</h3>
+                                </div>
+                                <span class="chart-badge">DAX: Top Product Sales</span>
+                            </div>
+                            <div class="chart-body">
+                                <canvas id="topProductsChart" height="240"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 4: Geographic Sales by City -->
+                        <div class="pbi-chart-card chart-span-6">
+                            <div class="chart-header">
+                                <div class="chart-title-wrap">
+                                    <i data-lucide="map-pin"></i>
+                                    <h3 class="chart-title">Geographic Sales by City</h3>
+                                </div>
+                                <span class="chart-badge">Top Urban Markets</span>
+                            </div>
+                            <div class="chart-body">
+                                <canvas id="citySalesChart" height="240"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Charts Grid: Row 3 (Payment Modes & Top Customers) -->
+                    <section class="charts-grid-row">
+                        <!-- Payment Modes -->
+                        <div class="pbi-chart-card chart-span-6">
+                            <div class="chart-header">
+                                <div class="chart-title-wrap">
+                                    <i data-lucide="credit-card"></i>
+                                    <h3 class="chart-title">Payment Modes Distribution</h3>
+                                </div>
+                                <span class="chart-badge">Transaction Share</span>
+                            </div>
+                            <div class="chart-body">
+                                <canvas id="paymentModeChart" height="200"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Customer Insights -->
+                        <div class="pbi-chart-card chart-span-6">
+                            <div class="chart-header">
+                                <div class="chart-title-wrap">
+                                    <i data-lucide="user-check"></i>
+                                    <h3 class="chart-title">Top Customer Accounts</h3>
+                                </div>
+                                <span class="chart-badge">524 Total Profiles</span>
+                            </div>
+                            <div class="chart-body">
+                                <div class="table-responsive">
+                                    <table class="analytics-table pbi-mini-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Customer Name</th>
+                                                <th>City</th>
+                                                <th>Orders</th>
+                                                <th>Total Spent</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="topCustomersTableBody">
+                                            {% for cust in data.top_customers %}
+                                            <tr>
+                                                <td><span class="rank-badge rank-{{ loop.index }}">{{ loop.index }}</span></td>
+                                                <td><strong>{{ cust.Customer_Name }}</strong></td>
+                                                <td>{{ cust.City }}</td>
+                                                <td>{{ cust.order_count }}</td>
+                                                <td><span class="money-highlight">₹{{ "{:,.2f}".format(cust.total_spent) }}</span></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- VIEW 2: POWER BI CLOUD EMBED -->
+                <div class="dashboard-view" id="viewEmbed">
+                    {% if pbi_config.embed_url %}
+                    <!-- Live Iframe Embed from Power BI Service -->
+                    <div class="pbi-embed-container">
+                        <iframe 
+                            id="pbiFrame"
+                            title="Power BI E-Commerce Sales Report" 
+                            src="{{ pbi_config.embed_url }}" 
+                            frameborder="0" 
+                            allowFullScreen="true"
+                            class="pbi-iframe"
+                        ></iframe>
+                    </div>
+                    {% else %}
+                    <!-- Setup & Embed Instructions Guide -->
+                    <div class="pbi-setup-guide-card">
+                        <div class="setup-guide-header">
+                            <div class="setup-icon-box">
+                                <i data-lucide="layers"></i>
+                            </div>
+                            <div>
+                                <h2 class="setup-title">Power BI Service Report Embedding</h2>
+                                <p class="setup-subtitle">Connect your Power BI Desktop file (`.pbix`) to MySQL and embed your live interactive report here.</p>
+                            </div>
+                        </div>
+
+                        <div class="setup-steps-grid">
+                            <div class="setup-step">
+                                <div class="step-num">1</div>
+                                <h4 class="step-title">Connect Power BI to MySQL</h4>
+                                <p class="step-desc">Open Power BI Desktop → <strong>Get Data</strong> → <strong>MySQL Database</strong>. Enter Server: <code>localhost:3306</code> and Database: <code>ecommerce_db</code>.</p>
+                            </div>
+
+                            <div class="setup-step">
+                                <div class="step-num">2</div>
+                                <h4 class="step-title">Add the 11 DAX Measures</h4>
+                                <p class="step-desc">Click <strong>New Measure</strong> in Power BI and paste the prepared DAX formulas (Total Sales, AOV, Growth %, etc.).</p>
+                            </div>
+
+                            <div class="setup-step">
+                                <div class="step-num">3</div>
+                                <h4 class="step-title">Publish to Power BI Service</h4>
+                                <p class="step-desc">Click <strong>Publish</strong> to your Power BI Workspace. Open the report on <strong>app.powerbi.com</strong>.</p>
+                            </div>
+
+                            <div class="setup-step">
+                                <div class="step-num">4</div>
+                                <h4 class="step-title">Generate Embed URL</h4>
+                                <p class="step-desc">In Power BI Service: <strong>File</strong> → <strong>Embed Report</strong> → <strong>Publish to Web (Public)</strong>. Copy the link and paste into <code>.env</code> under <code>POWERBI_EMBED_URL</code>.</p>
+                            </div>
+                        </div>
+
+                        <div class="setup-actions">
+                            <button class="btn btn-primary btn-copy-dax" id="openDaxFromSetupBtn">
+                                <i data-lucide="code-2"></i>
+                                <span>Explore All 11 DAX Measures</span>
+                            </button>
+                            <a href="https://app.powerbi.com" target="_blank" rel="noopener" class="btn btn-ghost">
+                                <i data-lucide="external-link"></i>
+                                <span>Open Power BI Service</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- DAX MEASURES MODAL DRAWER -->
+    <div class="modal-overlay" id="daxModal">
+        <div class="modal-card dax-modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <div class="modal-icon dax-icon-grad">
+                        <i data-lucide="calculator"></i>
+                    </div>
+                    <div>
+                        <h3 class="modal-title">Power BI DAX Measures Reference</h3>
+                        <p class="modal-subtitle">11 Production DAX Formulas for <code>ecommerce_db.orders</code></p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="closeDaxModalBtn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="dax-measures-list">
+                    {% for m in dax_measures %}
+                    <div class="dax-card">
+                        <div class="dax-header">
+                            <div class="dax-name-wrap">
+                                <span class="dax-name">{{ m.name }}</span>
+                                <span class="dax-cat-pill">{{ m.category }}</span>
+                            </div>
+                            <button class="btn-copy-formula" data-formula="{{ m.formula }}">
+                                <i data-lucide="copy"></i> Copy
+                            </button>
+                        </div>
+                        <p class="dax-desc">{{ m.description }}</p>
+                        <pre class="dax-code"><code>{{ m.formula }}</code></pre>
+                        <div class="dax-format">Format String: <code>{{ m.format }}</code></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embedded Initial Data for Chart.js -->
+    <script id="dashboardDataScript" type="application/json">
+        {{ data | tojson }}
+    </script>
+
+    <!-- Dashboard JavaScript Engine -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            if (window.lucide) window.lucide.createIcons();
+
+            // Load initial chart data
+            let initialData = {};
+            try {
+                const raw = document.getElementById("dashboardDataScript").textContent;
+                initialData = JSON.parse(raw);
+            } catch (e) {
+                console.error("Error parsing dashboard JSON data:", e);
+            }
+
+            // Global Chart instances
+            let monthlyChart = null;
+            let donutChart = null;
+            let productChart = null;
+            let cityChart = null;
+            let paymentChart = null;
+
+            // Initialize Charts
+            initCharts(initialData);
+
+            // Tab Switching (BI Visualizer vs Power BI Embed)
+            const tabVisualizerBtn = document.getElementById("tabVisualizerBtn");
+            const tabEmbedBtn = document.getElementById("tabEmbedBtn");
+            const viewVisualizer = document.getElementById("viewVisualizer");
+            const viewEmbed = document.getElementById("viewEmbed");
+
+            tabVisualizerBtn.addEventListener("click", () => {
+                tabVisualizerBtn.classList.add("active");
+                tabEmbedBtn.classList.remove("active");
+                viewVisualizer.classList.add("active");
+                viewEmbed.classList.remove("active");
+            });
+
+            tabEmbedBtn.addEventListener("click", () => {
+                tabEmbedBtn.classList.add("active");
+                tabVisualizerBtn.classList.remove("active");
+                viewEmbed.classList.add("active");
+                viewVisualizer.classList.remove("active");
+            });
+
+            // Slicers / Interactive Filters
+            const categorySlicer = document.getElementById("categorySlicer");
+            const citySlicer = document.getElementById("citySlicer");
+            const statusSlicer = document.getElementById("statusSlicer");
+            const resetFiltersBtn = document.getElementById("resetFiltersBtn");
+
+            async function applySlicers() {
+                const cat = categorySlicer.value;
+                const city = citySlicer.value;
+                const status = statusSlicer.value;
+
+                try {
+                    const url = `/api/powerbi/data?category=${encodeURIComponent(cat)}&city=${encodeURIComponent(city)}&status=${encodeURIComponent(status)}`;
+                    const res = await fetch(url);
+                    const freshData = await res.json();
+
+                    updateKPIs(freshData.kpis);
+                    updateCharts(freshData);
+                } catch (err) {
+                    console.error("Error updating slicers:", err);
+                }
+            }
+
+            categorySlicer.addEventListener("change", applySlicers);
+            citySlicer.addEventListener("change", applySlicers);
+            statusSlicer.addEventListener("change", applySlicers);
+
+            resetFiltersBtn.addEventListener("click", () => {
+                categorySlicer.value = "All";
+                citySlicer.value = "All";
+                statusSlicer.value = "All";
+                applySlicers();
+            });
+
+            // DAX Measures Modal
+            const daxModal = document.getElementById("daxModal");
+            const openDaxModalBtn = document.getElementById("openDaxModalBtn");
+            const openDaxFromSetupBtn = document.getElementById("openDaxFromSetupBtn");
+            const closeDaxModalBtn = document.getElementById("closeDaxModalBtn");
+
+            function showDaxModal() { daxModal.classList.add("active"); }
+            function hideDaxModal() { daxModal.classList.remove("active"); }
+
+            if (openDaxModalBtn) openDaxModalBtn.addEventListener("click", showDaxModal);
+            if (openDaxFromSetupBtn) openDaxFromSetupBtn.addEventListener("click", showDaxModal);
+            if (closeDaxModalBtn) closeDaxModalBtn.addEventListener("click", hideDaxModal);
+
+            daxModal.addEventListener("click", (e) => {
+                if (e.target === daxModal) hideDaxModal();
+            });
+
+            // Copy DAX buttons
+            document.querySelectorAll(".btn-copy-formula").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const formula = btn.getAttribute("data-formula");
+                    navigator.clipboard.writeText(formula).then(() => {
+                        const originalHtml = btn.innerHTML;
+                        btn.innerHTML = '<i data-lucide="check"></i> Copied!';
+                        if (window.lucide) window.lucide.createIcons();
+                        setTimeout(() => {
+                            btn.innerHTML = originalHtml;
+                            if (window.lucide) window.lucide.createIcons();
+                        }, 2000);
+                    });
+                });
+            });
+
+            // Mobile menu toggles
+            const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+            const mobileCloseBtn = document.getElementById("mobileCloseBtn");
+            const sidebar = document.getElementById("sidebar");
+
+            if (mobileMenuBtn && sidebar) {
+                mobileMenuBtn.addEventListener("click", () => sidebar.classList.add("open"));
+            }
+            if (mobileCloseBtn && sidebar) {
+                mobileCloseBtn.addEventListener("click", () => sidebar.classList.remove("open"));
+            }
+
+            // Function to update KPI values
+            function updateKPIs(kpis) {
+                if (!kpis) return;
+                const sales = parseFloat(kpis.total_sales || 0);
+                const orders = parseInt(kpis.total_orders || 0);
+                const customers = parseInt(kpis.total_customers || 0);
+                const qty = parseInt(kpis.total_quantity || 0);
+                const aov = parseFloat(kpis.avg_order_value || 0);
+                const discount = parseFloat(kpis.avg_discount || 0);
+                const profit = parseFloat(kpis.total_profit || 0);
+
+                document.getElementById("kpiSales").innerText = `₹${sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                document.getElementById("kpiOrders").innerText = orders.toLocaleString();
+                document.getElementById("kpiCustomers").innerText = customers.toLocaleString();
+                document.getElementById("kpiQty").innerText = `${qty.toLocaleString()} Units`;
+                document.getElementById("kpiAOV").innerText = `₹${aov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                document.getElementById("kpiDiscount").innerText = `${discount.toFixed(1)}%`;
+                document.getElementById("kpiProfit").innerText = `₹${profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+
+            // Function to initialize charts
+            function initCharts(d) {
+                const chartColors = {
+                    cyan: "#06B6D4",
+                    indigo: "#6366F1",
+                    emerald: "#10B981",
+                    amber: "#F59E0B",
+                    rose: "#F43F5E",
+                    violet: "#8B5CF6",
+                    teal: "#14B8A6",
+                    grid: "rgba(255, 255, 255, 0.06)",
+                    text: "#94A3B8"
+                };
+
+                // 1. Monthly Revenue Trend Chart
+                const monthCtx = document.getElementById("monthlyTrendChart").getContext("2d");
+                const monthLabels = d.monthly_trend.map(m => m.Order_Month);
+                const monthSales = d.monthly_trend.map(m => m.sales);
+                const monthProfits = d.monthly_trend.map(m => m.profit);
+
+                monthlyChart = new Chart(monthCtx, {
+                    type: "bar",
+                    data: {
+                        labels: monthLabels,
+                        datasets: [
+                            {
+                                label: "Gross Sales (₹)",
+                                data: monthSales,
+                                backgroundColor: "rgba(6, 182, 212, 0.75)",
+                                borderRadius: 6,
+                            },
+                            {
+                                label: "Net Profit (₹)",
+                                data: monthProfits,
+                                backgroundColor: "rgba(16, 185, 129, 0.8)",
+                                borderRadius: 6,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: chartColors.text, font: { family: 'Outfit', weight: '600' } } }
+                        },
+                        scales: {
+                            x: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text, font: { family: 'Outfit' } } },
+                            y: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text, font: { family: 'Outfit' } } }
+                        }
+                    }
+                });
+
+                // 2. Category Donut Chart
+                const donutCtx = document.getElementById("categoryDonutChart").getContext("2d");
+                const catLabels = d.categories.map(c => c.Category);
+                const catValues = d.categories.map(c => c.total_sales);
+
+                donutChart = new Chart(donutCtx, {
+                    type: "doughnut",
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            data: catValues,
+                            backgroundColor: ["#06B6D4", "#F43F5E", "#F59E0B", "#10B981"],
+                            borderWidth: 2,
+                            borderColor: "#0D1322"
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+
+                // 3. Top Products Chart
+                const prodCtx = document.getElementById("topProductsChart").getContext("2d");
+                const prodLabels = d.top_products.map(p => p.Product);
+                const prodSales = d.top_products.map(p => p.total_sales);
+
+                productChart = new Chart(prodCtx, {
+                    type: "bar",
+                    data: {
+                        labels: prodLabels,
+                        datasets: [{
+                            label: "Total Sales (₹)",
+                            data: prodSales,
+                            backgroundColor: "rgba(99, 102, 241, 0.8)",
+                            borderRadius: 6,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text } },
+                            y: { grid: { display: false }, ticks: { color: "#FFFFFF", font: { weight: '600' } } }
+                        }
+                    }
+                });
+
+                // 4. City Sales Chart
+                const cityCtx = document.getElementById("citySalesChart").getContext("2d");
+                const cityLabels = d.top_cities.map(c => c.City);
+                const citySales = d.top_cities.map(c => c.total_sales);
+
+                cityChart = new Chart(cityCtx, {
+                    type: "bar",
+                    data: {
+                        labels: cityLabels,
+                        datasets: [{
+                            label: "City Sales (₹)",
+                            data: citySales,
+                            backgroundColor: "rgba(245, 158, 11, 0.75)",
+                            borderRadius: 6,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text } },
+                            y: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text } }
+                        }
+                    }
+                });
+
+                // 5. Payment Modes Chart
+                const payCtx = document.getElementById("paymentModeChart").getContext("2d");
+                const payLabels = d.payment_modes.map(p => p.Payment_Mode);
+                const payCounts = d.payment_modes.map(p => p.order_count);
+
+                paymentChart = new Chart(payCtx, {
+                    type: "polarArea",
+                    data: {
+                        labels: payLabels,
+                        datasets: [{
+                            data: payCounts,
+                            backgroundColor: [
+                                "rgba(16, 185, 129, 0.75)",
+                                "rgba(6, 182, 212, 0.75)",
+                                "rgba(139, 92, 246, 0.75)",
+                                "rgba(244, 63, 94, 0.75)"
+                            ],
+                            borderColor: "#0D1322"
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right', labels: { color: chartColors.text } }
+                        },
+                        scales: {
+                            r: { grid: { color: chartColors.grid }, ticks: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // Function to update charts dynamically
+            function updateCharts(d) {
+                if (monthlyChart && d.monthly_trend) {
+                    monthlyChart.data.labels = d.monthly_trend.map(m => m.Order_Month);
+                    monthlyChart.data.datasets[0].data = d.monthly_trend.map(m => m.sales);
+                    monthlyChart.data.datasets[1].data = d.monthly_trend.map(m => m.profit);
+                    monthlyChart.update();
+                }
+
+                if (donutChart && d.categories) {
+                    donutChart.data.labels = d.categories.map(c => c.Category);
+                    donutChart.data.datasets[0].data = d.categories.map(c => c.total_sales);
+                    donutChart.update();
+
+                    // Update legend
+                    const legendHtml = d.categories.map(cat => `
+                        <div class="legend-item">
+                            <span class="legend-cat-name">${cat.Category}</span>
+                            <span class="legend-cat-val">₹${(cat.total_sales / 100000).toFixed(1)}L (${cat.share_pct}%)</span>
+                        </div>
+                    `).join("");
+                    document.getElementById("categoryLegendList").innerHTML = legendHtml;
+                }
+
+                if (productChart && d.top_products) {
+                    productChart.data.labels = d.top_products.map(p => p.Product);
+                    productChart.data.datasets[0].data = d.top_products.map(p => p.total_sales);
+                    productChart.update();
+                }
+
+                if (cityChart && d.top_cities) {
+                    cityChart.data.labels = d.top_cities.map(c => c.City);
+                    cityChart.data.datasets[0].data = d.top_cities.map(c => c.total_sales);
+                    cityChart.update();
+                }
+
+                if (paymentChart && d.payment_modes) {
+                    paymentChart.data.labels = d.payment_modes.map(p => p.Payment_Mode);
+                    paymentChart.data.datasets[0].data = d.payment_modes.map(p => p.order_count);
+                    paymentChart.update();
+                }
+
+                // Update customers table
+                if (d.top_customers) {
+                    const tbodyHtml = d.top_customers.map((cust, idx) => `
+                        <tr>
+                            <td><span class="rank-badge rank-${idx + 1}">${idx + 1}</span></td>
+                            <td><strong>${cust.Customer_Name}</strong></td>
+                            <td>${cust.City}</td>
+                            <td>${cust.order_count}</td>
+                            <td><span class="money-highlight">₹${parseFloat(cust.total_spent).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></td>
+                        </tr>
+                    `).join("");
+                    document.getElementById("topCustomersTableBody").innerHTML = tbodyHtml;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

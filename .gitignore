@@ -1,0 +1,124 @@
+# ===================================================
+# Environment & Secrets (DO NOT COMMIT)
+# ===================================================
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# ===================================================
+# Python & Bytecode
+# ===================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Python distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===================================================
+# Virtual Environments
+# ===================================================
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+bin/
+include/
+Lib/
+Scripts/
+
+# ===================================================
+# Testing & Coverage
+# ===================================================
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# ===================================================
+# IDEs & Code Editors
+# ===================================================
+# VS Code
+.vscode/
+!.vscode/settings.json.example
+
+# PyCharm / IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# AI & Agent artifacts
+.gemini/
+.agents/
+
+# Other Editors
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ===================================================
+# Operating System Files
+# ===================================================
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+
+# ===================================================
+# Logs & Temporary Files
+# ===================================================
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# SQLite / Local temp databases (if any)
+*.sqlite3
+*.db-journal

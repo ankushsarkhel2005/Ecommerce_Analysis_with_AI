@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce AI Data Assistant | Intelligent SQL Analytics</title>
+    <meta name="description" content="AI-Powered E-Commerce Analytics Dashboard. Query e-commerce datasets using natural language, auto-generate SQL, and receive instant business intelligence.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <i data-lucide="sparkles"></i>
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-title">E-Com Data AI</span>
+                        <span class="brand-subtitle">Smart SQL Analytics</span>
+                    </div>
+                </div>
+                <button class="mobile-close-btn" id="mobileCloseBtn" aria-label="Close sidebar">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- Primary App Navigation -->
+            <div class="sidebar-nav-menu">
+                <a href="/" class="nav-item active">
+                    <div class="nav-icon-wrap"><i data-lucide="bot"></i></div>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="/dashboard" class="nav-item">
+                    <div class="nav-icon-wrap"><i data-lucide="bar-chart-3"></i></div>
+                    <span>Power BI Dashboard</span>
+                    <span class="nav-pill-badge">Live</span>
+                </a>
+            </div>
+
+            <!-- New Analysis Action -->
+            <div class="sidebar-action">
+                <button class="btn btn-primary btn-new-chat" id="newChatBtn">
+                    <i data-lucide="plus-circle"></i>
+                    <span>New Analysis</span>
+                </button>
+            </div>
+
+            <!-- Quick Questions Navigation -->
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <i data-lucide="zap"></i>
+                    <span>Quick Business Queries</span>
+                </div>
+                <div class="quick-queries-list">
+                    <button class="query-chip chip-sales" data-question="What is the total sales?">
+                        <div class="chip-icon-wrap"><i data-lucide="circle-dollar-sign"></i></div>
+                        <span>What is the total sales?</span>
+                    </button>
+                    <button class="query-chip chip-product" data-question="Which product has the highest sales?">
+                        <div class="chip-icon-wrap"><i data-lucide="trophy"></i></div>
+                        <span>Which product has the highest sales?</span>
+                    </button>
+                    <button class="query-chip chip-category" data-question="Which category has the highest sales?">
+                        <div class="chip-icon-wrap"><i data-lucide="layers"></i></div>
+                        <span>Which category has the highest sales?</span>
+                    </button>
+                    <button class="query-chip chip-city" data-question="Which city has the highest sales?">
+                        <div class="chip-icon-wrap"><i data-lucide="map-pin"></i></div>
+                        <span>Which city has the highest sales?</span>
+                    </button>
+                    <button class="query-chip chip-insights" data-question="Show me important business insights.">
+                        <div class="chip-icon-wrap"><i data-lucide="sparkles"></i></div>
+                        <span>Show me business insights</span>
+                    </button>
+                    <button class="query-chip chip-product" data-question="What are the top 5 products by revenue?">
+                        <div class="chip-icon-wrap"><i data-lucide="award"></i></div>
+                        <span>Top 5 products by revenue</span>
+                    </button>
+                    <button class="query-chip chip-category" data-question="Compare sales between categories.">
+                        <div class="chip-icon-wrap"><i data-lucide="bar-chart-3"></i></div>
+                        <span>Compare sales by category</span>
+                    </button>
+                    <button class="query-chip chip-sales" data-question="Which month had the highest sales?">
+                        <div class="chip-icon-wrap"><i data-lucide="calendar"></i></div>
+                        <span>Monthly sales trends</span>
+                    </button>
+                    <button class="query-chip chip-insights" data-question="What is the breakdown of payment modes?">
+                        <div class="chip-icon-wrap"><i data-lucide="credit-card"></i></div>
+                        <span>Payment modes breakdown</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Database & System Health Card -->
+            <div class="sidebar-footer">
+                <div class="db-status-card" id="dbStatusCard">
+                    <div class="status-header">
+                        <div class="status-indicator-wrapper">
+                            <span class="status-dot {{ db_status.status_class }}"></span>
+                            <span class="status-name" id="dbStatusLabel">{{ db_status.status_label }}</span>
+                        </div>
+                        <button class="schema-btn" id="openSchemaBtn" title="View Database Schema">
+                            <i data-lucide="database"></i>
+                        </button>
+                    </div>
+                    <div class="status-details">
+                        <div class="status-row">
+                            <span class="status-label">Table:</span>
+                            <span class="status-value highlight">{{ db_status.table }}</span>
+                        </div>
+                        <div class="status-row">
+                            <span class="status-label">Records:</span>
+                            <span class="status-value">{{ "{:,}".format(db_status.total_records) }} rows</span>
+                        </div>
+                        <div class="status-row">
+                            <span class="status-label">Engine:</span>
+                            <span class="status-value">{{ db_status.engine }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Navigation Header -->
+            <header class="top-nav">
+                <div class="nav-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open sidebar">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="header-title-wrap">
+                        <h1 class="header-title">E-Commerce Analytics Assistant</h1>
+                        <span class="badge badge-dataset">
+                            <i data-lucide="table"></i> Clean_Ecommerce.xlsx
+                        </span>
+                    </div>
+                </div>
+                <div class="nav-right">
+                    <a href="/dashboard" class="btn btn-ghost highlight-nav-btn" title="Open Power BI Analytics Dashboard">
+                        <i data-lucide="bar-chart-3"></i>
+                        <span>Power BI Dashboard</span>
+                    </a>
+                    <button class="btn btn-ghost" id="viewSchemaNavBtn">
+                        <i data-lucide="file-spreadsheet"></i>
+                        <span>Schema</span>
+                    </button>
+                    <button class="btn btn-ghost" id="clearChatNavBtn" title="Clear Conversation">
+                        <i data-lucide="trash-2"></i>
+                        <span>Clear</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Chat & Analysis Viewport -->
+            <section class="chat-viewport" id="chatViewport">
+                <div class="chat-container" id="chatContainer">
+                    
+                    <!-- Welcome Hero Screen -->
+                    <div class="welcome-screen" id="welcomeScreen">
+                        <div class="welcome-badge">
+                            <i data-lucide="sparkles"></i>
+                            <span>AI-Powered Natural Language Analytics</span>
+                        </div>
+                        <h2 class="welcome-title">Ask anything about your E-Commerce Data</h2>
+                        <p class="welcome-description">
+                            Our AI automatically translates your natural language questions into safe, optimized SQL queries, queries the database in real-time, and delivers actionable business explanations.
+                        </p>
+
+                        <!-- High-Level KPI Summary Tiles -->
+                        <div class="kpi-grid">
+                            <div class="kpi-card kpi-rev">
+                                <div class="kpi-icon revenue">
+                                    <i data-lucide="circle-dollar-sign"></i>
+                                </div>
+                                <div class="kpi-info">
+                                    <span class="kpi-label">Total Revenue</span>
+                                    <span class="kpi-value">₹39.07 Lakh</span>
+                                </div>
+                            </div>
+                            <div class="kpi-card kpi-ord">
+                                <div class="kpi-icon orders">
+                                    <i data-lucide="shopping-bag"></i>
+                                </div>
+                                <div class="kpi-info">
+                                    <span class="kpi-label">Total Orders</span>
+                                    <span class="kpi-value">524 Records</span>
+                                </div>
+                            </div>
+                            <div class="kpi-card kpi-cat">
+                                <div class="kpi-icon category">
+                                    <i data-lucide="grid"></i>
+                                </div>
+                                <div class="kpi-info">
+                                    <span class="kpi-label">Top Category</span>
+                                    <span class="kpi-value">Electronics</span>
+                                </div>
+                            </div>
+                            <div class="kpi-card kpi-prd">
+                                <div class="kpi-icon product">
+                                    <i data-lucide="package"></i>
+                                </div>
+                                <div class="kpi-info">
+                                    <span class="kpi-label">Top Product</span>
+                                    <span class="kpi-value">Laptop</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Starter Prompt Suggestions -->
+                        <div class="starter-suggestions">
+                            <span class="starter-title">Try one of these sample questions:</span>
+                            <div class="starter-chips">
+                                <button class="starter-chip" data-question="What is the total sales?">
+                                    <i data-lucide="help-circle"></i>
+                                    <span>"What is the total sales?"</span>
+                                </button>
+                                <button class="starter-chip" data-question="Which product has the highest sales?">
+                                    <i data-lucide="help-circle"></i>
+                                    <span>"Which product has the highest sales?"</span>
+                                </button>
+                                <button class="starter-chip" data-question="Which category has the highest sales?">
+                                    <i data-lucide="help-circle"></i>
+                                    <span>"Which category has the highest sales?"</span>
+                                </button>
+                                <button class="starter-chip" data-question="Which city has the highest sales?">
+                                    <i data-lucide="help-circle"></i>
+                                    <span>"Which city has the highest sales?"</span>
+                                </button>
+                                <button class="starter-chip" data-question="Show me important business insights.">
+                                    <i data-lucide="help-circle"></i>
+                                    <span>"Show me important business insights."</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Messages Stream -->
+                    <div class="messages-stream" id="messagesStream"></div>
+                </div>
+            </section>
+
+            <!-- Bottom Floating Prompt Input Bar -->
+            <footer class="prompt-footer">
+                <div class="input-wrapper">
+                    <div class="input-box-container">
+                        <textarea 
+                            id="promptInput" 
+                            class="prompt-input" 
+                            rows="1" 
+                            placeholder="Ask a question about your e-commerce data (e.g., 'What are the top 5 products by revenue?')..." 
+                            autocomplete="off"
+                        ></textarea>
+                        <button class="send-btn" id="sendBtn" aria-label="Send query" title="Execute Query (Enter)">
+                            <i data-lucide="arrow-up"></i>
+                        </button>
+                    </div>
+                    <div class="input-helper">
+                        <span>⚡ Press <kbd>Enter</kbd> to analyze | Safe SELECT execution with anti-SQL injection protection</span>
+                    </div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Schema Explorer Modal Drawer -->
+    <div class="modal-overlay" id="schemaModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <div class="modal-icon">
+                        <i data-lucide="database"></i>
+                    </div>
+                    <div>
+                        <h3 class="modal-title">E-Commerce Database Schema</h3>
+                        <p class="modal-subtitle">Table: <code id="modalTableName">orders</code></p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="closeSchemaModalBtn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="schemaModalBody">
+                <div class="schema-loading">
+                    <i data-lucide="loader" class="spin"></i> Loading schema columns...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
