@@ -81,10 +81,16 @@ def api_powerbi_config():
 @app.route("/api/powerbi/data", methods=["GET"])
 def api_powerbi_data():
     """Returns live aggregated analytics data for interactive visualizer and slicers."""
-    category = request.args.get("category", "All")
-    city = request.args.get("city", "All")
-    status = request.args.get("status", "All")
-    data = powerbi.get_powerbi_dashboard_data(category_filter=category, city_filter=city, status_filter=status)
+    category = request.args.getlist("category") or request.args.get("category", "All")
+    city = request.args.getlist("city") or request.args.get("city", "All")
+    status = request.args.getlist("status") or request.args.get("status", "All")
+    payment = request.args.getlist("payment") or request.args.get("payment", "All")
+    data = powerbi.get_powerbi_dashboard_data(
+        category_filter=category,
+        city_filter=city,
+        status_filter=status,
+        payment_filter=payment
+    )
     return jsonify(data)
 
 
@@ -194,7 +200,7 @@ def api_import():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    debug = os.getenv("FLASK_DEBUG", "True").lower() in ["true", "1", "t"]
+    debug = os.getenv("FLASK_DEBUG", "False").lower() in ["true", "1", "t"]
     print("\n" + "=" * 60)
     print(f"🌟 E-Commerce AI Assistant running at: http://127.0.0.1:{port}")
     print("=" * 60 + "\n")

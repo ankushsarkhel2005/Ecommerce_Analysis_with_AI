@@ -152,6 +152,38 @@ class TestEcommerceAssistant(unittest.TestCase):
         self.assertIn("monthly_trend", bi_data)
         self.assertGreater(float(bi_data["kpis"]["total_sales"]), 0)
 
+    def test_08_multi_select_filtering(self):
+        """Test multi-select slicers filtering in powerbi module and API."""
+        import powerbi
+
+        # 1. Multi-category direct filter
+        multi_cat = powerbi.get_powerbi_dashboard_data(category_filter=["Electronics", "Fashion"])
+        cat_names = [c["Category"] for c in multi_cat["categories"]]
+        self.assertIn("Electronics", cat_names)
+        self.assertIn("Fashion", cat_names)
+        self.assertNotIn("Furniture", cat_names)
+        self.assertNotIn("Home", cat_names)
+
+        # 2. Multi-city comma-separated string filter
+        multi_city = powerbi.get_powerbi_dashboard_data(city_filter="Mumbai, Pune")
+        city_names = [c["City"] for c in multi_city["top_cities"]]
+        for c in city_names:
+            self.assertIn(c, ["Mumbai", "Pune"])
+
+        # 3. Multi-select API endpoint with repeated query params
+        res = self.app.get("/api/powerbi/data?category=Electronics&category=Fashion&status=Delivered")
+        self.assertEqual(res.status_code, 200)
+        data = json.loads(res.data)
+        self.assertEqual(data["filters_applied"]["category"], ["Electronics", "Fashion"])
+        self.assertEqual(data["filters_applied"]["status"], ["Delivered"])
+        self.assertGreater(float(data["kpis"]["total_sales"]), 0)
+
+        # 4. Multi-select API endpoint with comma-delimited params
+        res_comma = self.app.get("/api/powerbi/data?city=Bengaluru,Delhi")
+        self.assertEqual(res_comma.status_code, 200)
+        data_comma = json.loads(res_comma.data)
+        self.assertEqual(data_comma["filters_applied"]["city"], ["Bengaluru", "Delhi"])
+
 
 if __name__ == "__main__":
     unittest.main()

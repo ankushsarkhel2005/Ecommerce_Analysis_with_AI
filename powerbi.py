@@ -136,25 +136,69 @@ def get_dax_measures():
     ]
 
 
-def get_powerbi_dashboard_data(category_filter=None, city_filter=None, status_filter=None):
+def _normalize_filter_values(val):
+    """
+    Normalizes filter input into a list of cleaned string values.
+    Supports:
+    - None or 'All' -> []
+    - Comma-separated string: 'Electronics,Fashion' -> ['Electronics', 'Fashion']
+    - List/Tuple/Set: ['Electronics', 'Fashion'] -> ['Electronics', 'Fashion']
+    - Single string: 'Electronics' -> ['Electronics']
+    """
+    if not val:
+        return []
+    if isinstance(val, str):
+        if val.strip().lower() == "all" or not val.strip():
+            return []
+        return [x.strip() for x in val.split(",") if x.strip() and x.strip().lower() != "all"]
+    if isinstance(val, (list, tuple, set)):
+        items = []
+        for x in val:
+            if not x:
+                continue
+            s = str(x).strip()
+            if s and s.lower() != "all":
+                if "," in s:
+                    items.extend([sub.strip() for sub in s.split(",") if sub.strip() and sub.strip().lower() != "all"])
+                else:
+                    items.append(s)
+        return items
+    s = str(val).strip()
+    return [s] if s and s.lower() != "all" else []
+
+
+def _quote_sql_str(val):
+    """Safely quotes and escapes a string literal for SQL IN clause."""
+    return "'" + str(val).replace("'", "''") + "'"
+
+
+def get_powerbi_dashboard_data(category_filter=None, city_filter=None, status_filter=None, payment_filter=None):
     """
     Queries the database and returns structured analytics data for the dashboard visuals,
-    supporting interactive multi-dimension filtering.
+    supporting interactive multi-dimension and multi-select filtering.
     """
     table = "orders"
     where_clauses = []
     
-    if category_filter and category_filter.lower() != "all":
-        safe_cat = category_filter.replace("'", "''")
-        where_clauses.append(f"Category = '{safe_cat}'")
+    cat_list = _normalize_filter_values(category_filter)
+    if cat_list:
+        safe_cats = ", ".join(_quote_sql_str(c) for c in cat_list)
+        where_clauses.append(f"Category IN ({safe_cats})")
         
-    if city_filter and city_filter.lower() != "all":
-        safe_city = city_filter.replace("'", "''")
-        where_clauses.append(f"City = '{safe_city}'")
+    city_list = _normalize_filter_values(city_filter)
+    if city_list:
+        safe_cities = ", ".join(_quote_sql_str(c) for c in city_list)
+        where_clauses.append(f"City IN ({safe_cities})")
         
-    if status_filter and status_filter.lower() != "all":
-        safe_status = status_filter.replace("'", "''")
-        where_clauses.append(f"Order_Status = '{safe_status}'")
+    status_list = _normalize_filter_values(status_filter)
+    if status_list:
+        safe_statuses = ", ".join(_quote_sql_str(s) for s in status_list)
+        where_clauses.append(f"Order_Status IN ({safe_statuses})")
+
+    payment_list = _normalize_filter_values(payment_filter)
+    if payment_list:
+        safe_payments = ", ".join(_quote_sql_str(p) for p in payment_list)
+        where_clauses.append(f"Payment_Mode IN ({safe_payments})")
 
     where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
 
@@ -283,15 +327,16 @@ def get_powerbi_dashboard_data(category_filter=None, city_filter=None, status_fi
     cust_res = database.execute_query(cust_sql)
     top_customers = cust_res["rows"]
 
-    # 8. Slicer Options
     slicer_cat_res = database.execute_query(f"SELECT DISTINCT Category FROM {table} ORDER BY Category;")
     slicer_city_res = database.execute_query(f"SELECT DISTINCT City FROM {table} ORDER BY City;")
     slicer_status_res = database.execute_query(f"SELECT DISTINCT Order_Status FROM {table} ORDER BY Order_Status;")
+    slicer_pay_res = database.execute_query(f"SELECT DISTINCT Payment_Mode FROM {table} ORDER BY Payment_Mode;")
 
     slicer_options = {
         "categories": [r["Category"] for r in slicer_cat_res.get("rows", []) if r.get("Category")],
         "cities": [r["City"] for r in slicer_city_res.get("rows", []) if r.get("City")],
         "statuses": [r["Order_Status"] for r in slicer_status_res.get("rows", []) if r.get("Order_Status")],
+        "payment_modes": [r["Payment_Mode"] for r in slicer_pay_res.get("rows", []) if r.get("Payment_Mode")],
     }
 
     return {
@@ -304,8 +349,9 @@ def get_powerbi_dashboard_data(category_filter=None, city_filter=None, status_fi
         "top_customers": top_customers,
         "slicer_options": slicer_options,
         "filters_applied": {
-            "category": category_filter or "All",
-            "city": city_filter or "All",
-            "status": status_filter or "All",
+            "category": cat_list if cat_list else ["All"],
+            "city": city_list if city_list else ["All"],
+            "status": status_list if status_list else ["All"],
+            "payment": payment_list if payment_list else ["All"],
         }
     }

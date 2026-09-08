@@ -295,9 +295,10 @@ def execute_query(sql_query):
         }
 
     try:
+        clean_exec_sql = sql_query.strip().rstrip(";")
         if engine == "mysql":
             with conn.cursor() as cursor:
-                cursor.execute(sql_query)
+                cursor.execute(clean_exec_sql)
                 results = cursor.fetchall()
                 execution_time = round((time.time() - start_time) * 1000, 2)
                 conn.close()
@@ -341,7 +342,7 @@ def execute_query(sql_query):
 
         elif engine == "sqlite":
             cursor = conn.cursor()
-            cursor.execute(sql_query)
+            cursor.execute(clean_exec_sql)
             rows = cursor.fetchall()
             execution_time = round((time.time() - start_time) * 1000, 2)
 

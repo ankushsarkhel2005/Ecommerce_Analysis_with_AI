@@ -70,9 +70,19 @@ CRITICAL RULES:
 1. Generate ONLY ONE valid SELECT query (or WITH ... SELECT).
 2. ONLY use the table and column names specified in the schema above. DO NOT invent columns or tables.
 3. NEVER generate any data modification statements (NO DROP, DELETE, UPDATE, INSERT, ALTER, TRUNCATE, CREATE).
-4. Use aggregation functions (SUM, AVG, COUNT, MIN, MAX) with appropriate aliases when calculating totals or metrics.
+4. MANDATORY METRIC PROJECTION: When answering questions about rankings, leaders, or top/highest/lowest items (e.g. 'Which product has the highest sales?', 'Top category', 'Highest city'):
+   - ALWAYS include both the dimension column AND the calculated aggregate metric with a clean alias in the SELECT clause (e.g., `SUM(Sales) AS Total_Sales`).
+   - NEVER select only the dimension column (DO NOT generate `SELECT Product FROM orders GROUP BY Product ORDER BY SUM(Sales) DESC LIMIT 1`).
+   - ALWAYS generate queries formatted like:
+     SELECT 
+         Product,
+         SUM(Sales) AS Total_Sales
+     FROM orders
+     GROUP BY Product
+     ORDER BY Total_Sales DESC
+     LIMIT 1;
 5. Always use `GROUP BY` when aggregating non-aggregated columns.
-6. Use `ORDER BY` and `LIMIT` appropriately (e.g. for "highest", "top 5", "best", "most").
+6. Order by the calculated alias (e.g. `ORDER BY Total_Sales DESC`) and use `LIMIT` appropriately.
 7. For questions about sales or revenue, use `SUM(Sales)` or `SUM(Net_Amount)`.
 8. Handle potential NULLs using `COALESCE()` or filtering `WHERE Sales IS NOT NULL`.
 9. For case-insensitive text matching or city names, use standard comparisons.
@@ -80,20 +90,108 @@ CRITICAL RULES:
 """
 
 
-def clean_sql_output(raw_output):
+def enrich_and_format_sql(raw_output):
     """
-    Strips markdown code blocks, backticks, extra whitespaces, and trailing semicolons.
+    1. Strips markdown code blocks and excess whitespace.
+    2. Ensures aggregate metrics used in ORDER BY or requested for ranking
+       are projected in the SELECT clause with meaningful aliases.
+    3. Formats SQL cleanly with line breaks and indentation.
     """
-    if not raw_output:
+    if not raw_output or not raw_output.strip():
         return ""
+
     text = raw_output.strip()
-    # Remove markdown code blocks like ```sql ... ```
     text = re.sub(r"^```(?:sql)?\s*", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\s*```$", "", text)
     text = text.strip()
-    # Remove trailing semicolons for consistent execution
-    text = re.sub(r";+\s*$", "", text)
-    return text.strip()
+    text = re.sub(r";+\s*$", "", text).strip()
+
+    # If it's a complex CTE or multiple subqueries, keep intact
+    if text.upper().startswith("WITH") or text.count("SELECT") > 2:
+        return text + ";"
+
+    # 1. Enrich missing aggregate in SELECT if present in ORDER BY
+    # E.g.: SELECT Product FROM orders GROUP BY Product ORDER BY SUM(Sales) DESC LIMIT 1
+    order_agg = re.search(
+        r"ORDER\s+BY\s+((?:SUM|AVG|COUNT|MIN|MAX)\s*\(\s*(?:DISTINCT\s+)?([a-zA-Z0-9_\*]+)\s*\))(?:\s+(DESC|ASC))?",
+        text,
+        re.IGNORECASE,
+    )
+    if order_agg:
+        full_expr = order_agg.group(1)
+        col_name = order_agg.group(2)
+        direction = order_agg.group(3) or ""
+
+        select_match = re.search(r"^\s*SELECT\s+(.*?)\s+FROM\b", text, re.IGNORECASE | re.DOTALL)
+        if select_match:
+            select_cols = select_match.group(1)
+            # check if aggregate function is already in the projection
+            has_agg = re.search(r"\b(?:SUM|AVG|COUNT|MIN|MAX)\b", select_cols, re.IGNORECASE)
+            if not has_agg:
+                if col_name.lower() == "sales":
+                    alias = "Total_Sales"
+                elif col_name.lower() in ("net_amount", "netsales"):
+                    alias = "Total_Net_Sales"
+                elif col_name.lower() == "profit":
+                    alias = "Total_Profit"
+                elif col_name.lower() in ("qty", "quantity"):
+                    alias = "Total_Quantity"
+                elif col_name.lower() in ("order_id", "*"):
+                    alias = "Total_Orders"
+                else:
+                    alias = f"Total_{col_name.title()}"
+
+                new_select_cols = f"{select_cols.strip()}, {full_expr} AS {alias}"
+                text = re.sub(
+                    r"^\s*SELECT\s+.*?\s+FROM\b",
+                    f"SELECT {new_select_cols} FROM",
+                    text,
+                    count=1,
+                    flags=re.IGNORECASE | re.DOTALL,
+                )
+                dir_str = f" {direction}" if direction else ""
+                text = re.sub(
+                    r"ORDER\s+BY\s+" + re.escape(full_expr) + r"(?:\s+" + direction + r")?",
+                    f"ORDER BY {alias}{dir_str}",
+                    text,
+                    flags=re.IGNORECASE,
+                )
+
+    # 2. Format SQL clauses onto separate lines
+    clause_regex = r"\b(SELECT|FROM|WHERE|GROUP\s+BY|HAVING|ORDER\s+BY|LIMIT)\b"
+    tokens = re.split(clause_regex, text, flags=re.IGNORECASE)
+
+    if len(tokens) <= 1:
+        return text + ";"
+
+    formatted_lines = []
+    i = 1
+    while i < len(tokens):
+        clause_name = tokens[i].strip().upper()
+        clause_content = tokens[i + 1].strip() if i + 1 < len(tokens) else ""
+        clause_name = re.sub(r"\s+", " ", clause_name)
+
+        if clause_name == "SELECT":
+            cols = [c.strip() for c in re.split(r",(?![^\(\)]*\))", clause_content) if c.strip()]
+            formatted_lines.append("SELECT")
+            for idx, col in enumerate(cols):
+                comma = "," if idx < len(cols) - 1 else ""
+                formatted_lines.append(f"    {col}{comma}")
+        else:
+            formatted_lines.append(f"{clause_name} {clause_content}")
+        i += 2
+
+    res = "\n".join(formatted_lines).strip()
+    if not res.endswith(";"):
+        res += ";"
+    return res
+
+
+def clean_sql_output(raw_output):
+    """
+    Cleans, enriches with required metrics, and standardizes SQL query formatting.
+    """
+    return enrich_and_format_sql(raw_output)
 
 
 def validate_sql(sql_query, allowed_table="orders"):

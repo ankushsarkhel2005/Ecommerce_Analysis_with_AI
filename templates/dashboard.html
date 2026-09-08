@@ -60,39 +60,133 @@
                     <span>Dashboard Slicers</span>
                 </div>
                 <div class="slicers-container">
-                    <div class="slicer-group">
-                        <label class="slicer-label" for="categorySlicer">Category</label>
-                        <select id="categorySlicer" class="slicer-select">
-                            <option value="All">All Categories</option>
-                            {% for cat in data.slicer_options.categories %}
-                            <option value="{{ cat }}">{{ cat }}</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Slicer 1: Category Multi-Select -->
+                    <div class="slicer-group" data-dim="category">
+                        <div class="slicer-header">
+                            <label class="slicer-label">Category</label>
+                            <span class="slicer-badge" id="categoryCountBadge">All ({{ data.slicer_options.categories|length }})</span>
+                        </div>
+                        <div class="multi-select-dropdown" id="categoryDropdown">
+                            <button type="button" class="multi-select-trigger" id="categoryTrigger" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="trigger-text" id="categoryTriggerText">All Categories</span>
+                                <i data-lucide="chevron-down" class="dropdown-chevron"></i>
+                            </button>
+                            <div class="multi-select-panel" id="categoryPanel">
+                                <div class="panel-actions">
+                                    <button type="button" class="action-btn select-all-btn" data-action="select-all" data-target="category">Select All</button>
+                                    <span class="action-divider">•</span>
+                                    <button type="button" class="action-btn clear-all-btn" data-action="clear-all" data-target="category">Clear</button>
+                                </div>
+                                <div class="checkbox-list" id="categoryCheckboxList">
+                                    {% for cat in data.slicer_options.categories %}
+                                    <label class="checkbox-item" data-text="{{ cat|lower }}">
+                                        <input type="checkbox" value="{{ cat }}" checked data-dim="category" class="slicer-checkbox">
+                                        <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                                        <span class="checkbox-label">{{ cat }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="slicer-group">
-                        <label class="slicer-label" for="citySlicer">City / Location</label>
-                        <select id="citySlicer" class="slicer-select">
-                            <option value="All">All Cities</option>
-                            {% for city in data.slicer_options.cities %}
-                            <option value="{{ city }}">{{ city }}</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Slicer 2: City / Location Multi-Select -->
+                    <div class="slicer-group" data-dim="city">
+                        <div class="slicer-header">
+                            <label class="slicer-label">City / Location</label>
+                            <span class="slicer-badge" id="cityCountBadge">All ({{ data.slicer_options.cities|length }})</span>
+                        </div>
+                        <div class="multi-select-dropdown" id="cityDropdown">
+                            <button type="button" class="multi-select-trigger" id="cityTrigger" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="trigger-text" id="cityTriggerText">All Cities</span>
+                                <i data-lucide="chevron-down" class="dropdown-chevron"></i>
+                            </button>
+                            <div class="multi-select-panel" id="cityPanel">
+                                <div class="panel-search">
+                                    <i data-lucide="search" class="search-icon"></i>
+                                    <input type="text" placeholder="Search cities..." class="slicer-search-input" id="citySearchInput">
+                                </div>
+                                <div class="panel-actions">
+                                    <button type="button" class="action-btn select-all-btn" data-action="select-all" data-target="city">Select All</button>
+                                    <span class="action-divider">•</span>
+                                    <button type="button" class="action-btn clear-all-btn" data-action="clear-all" data-target="city">Clear</button>
+                                </div>
+                                <div class="checkbox-list" id="cityCheckboxList">
+                                    {% for city in data.slicer_options.cities %}
+                                    <label class="checkbox-item" data-text="{{ city|lower }}">
+                                        <input type="checkbox" value="{{ city }}" checked data-dim="city" class="slicer-checkbox">
+                                        <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                                        <span class="checkbox-label">{{ city }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="slicer-group">
-                        <label class="slicer-label" for="statusSlicer">Order Status</label>
-                        <select id="statusSlicer" class="slicer-select">
-                            <option value="All">All Statuses</option>
-                            {% for st in data.slicer_options.statuses %}
-                            <option value="{{ st }}">{{ st }}</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Slicer 3: Order Status Multi-Select -->
+                    <div class="slicer-group" data-dim="status">
+                        <div class="slicer-header">
+                            <label class="slicer-label">Order Status</label>
+                            <span class="slicer-badge" id="statusCountBadge">All ({{ data.slicer_options.statuses|length }})</span>
+                        </div>
+                        <div class="multi-select-dropdown" id="statusDropdown">
+                            <button type="button" class="multi-select-trigger" id="statusTrigger" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="trigger-text" id="statusTriggerText">All Statuses</span>
+                                <i data-lucide="chevron-down" class="dropdown-chevron"></i>
+                            </button>
+                            <div class="multi-select-panel" id="statusPanel">
+                                <div class="panel-actions">
+                                    <button type="button" class="action-btn select-all-btn" data-action="select-all" data-target="status">Select All</button>
+                                    <span class="action-divider">•</span>
+                                    <button type="button" class="action-btn clear-all-btn" data-action="clear-all" data-target="status">Clear</button>
+                                </div>
+                                <div class="checkbox-list" id="statusCheckboxList">
+                                    {% for st in data.slicer_options.statuses %}
+                                    <label class="checkbox-item" data-text="{{ st|lower }}">
+                                        <input type="checkbox" value="{{ st }}" checked data-dim="status" class="slicer-checkbox">
+                                        <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                                        <span class="checkbox-label">{{ st }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <button class="btn btn-secondary btn-reset-filters" id="resetFiltersBtn">
+                    <!-- Slicer 4: Payment Mode Multi-Select -->
+                    <div class="slicer-group" data-dim="payment">
+                        <div class="slicer-header">
+                            <label class="slicer-label">Payment Mode</label>
+                            <span class="slicer-badge" id="paymentCountBadge">All ({{ data.slicer_options.payment_modes|length }})</span>
+                        </div>
+                        <div class="multi-select-dropdown" id="paymentDropdown">
+                            <button type="button" class="multi-select-trigger" id="paymentTrigger" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="trigger-text" id="paymentTriggerText">All Payment Modes</span>
+                                <i data-lucide="chevron-down" class="dropdown-chevron"></i>
+                            </button>
+                            <div class="multi-select-panel" id="paymentPanel">
+                                <div class="panel-actions">
+                                    <button type="button" class="action-btn select-all-btn" data-action="select-all" data-target="payment">Select All</button>
+                                    <span class="action-divider">•</span>
+                                    <button type="button" class="action-btn clear-all-btn" data-action="clear-all" data-target="payment">Clear</button>
+                                </div>
+                                <div class="checkbox-list" id="paymentCheckboxList">
+                                    {% for pm in data.slicer_options.payment_modes %}
+                                    <label class="checkbox-item" data-text="{{ pm|lower }}">
+                                        <input type="checkbox" value="{{ pm }}" checked data-dim="payment" class="slicer-checkbox">
+                                        <span class="custom-checkbox"><i data-lucide="check"></i></span>
+                                        <span class="checkbox-label">{{ pm }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-secondary btn-reset-filters" id="resetFiltersBtn" title="Reset all multi-select filters">
                         <i data-lucide="rotate-ccw"></i>
-                        <span>Reset Filters</span>
+                        <span>Reset All Filters</span>
                     </button>
                 </div>
 
@@ -174,6 +268,24 @@
                 <!-- VIEW 1: INTERACTIVE BI VISUALIZER -->
                 <div class="dashboard-view active" id="viewVisualizer">
                     
+                    <!-- Active Multi-Select Slicers Bar -->
+                    <div class="active-filters-bar" id="activeFiltersBar">
+                        <div class="active-filters-header">
+                            <span class="active-filters-label">
+                                <i data-lucide="filter"></i> Active Slicers:
+                            </span>
+                        </div>
+                        <div class="active-filters-chips" id="activeFiltersChips">
+                            <span class="no-filter-tag">
+                                <i data-lucide="check-circle-2"></i> Showing all data across all dimensions
+                            </span>
+                        </div>
+                        <button type="button" class="btn-clear-all-chips" id="clearAllChipsBtn" style="display: none;">
+                            <i data-lucide="rotate-ccw"></i>
+                            <span>Clear All Filters</span>
+                        </button>
+                    </div>
+
                     <!-- KPI Cards Summary Grid (7 Executive Measures) -->
                     <section class="kpi-summary-section">
                         <div class="pbi-kpi-grid">
@@ -549,39 +661,267 @@
                 viewVisualizer.classList.remove("active");
             });
 
-            // Slicers / Interactive Filters
-            const categorySlicer = document.getElementById("categorySlicer");
-            const citySlicer = document.getElementById("citySlicer");
-            const statusSlicer = document.getElementById("statusSlicer");
+            // Multi-Select Slicers State & Engine
+            const dimensions = [
+                { key: "category", name: "Category", dropdownId: "categoryDropdown", triggerId: "categoryTrigger", textId: "categoryTriggerText", badgeId: "categoryCountBadge", listId: "categoryCheckboxList" },
+                { key: "city", name: "City", dropdownId: "cityDropdown", triggerId: "cityTrigger", textId: "cityTriggerText", badgeId: "cityCountBadge", listId: "cityCheckboxList", searchId: "citySearchInput" },
+                { key: "status", name: "Status", dropdownId: "statusDropdown", triggerId: "statusTrigger", textId: "statusTriggerText", badgeId: "statusCountBadge", listId: "statusCheckboxList" },
+                { key: "payment", name: "Payment", dropdownId: "paymentDropdown", triggerId: "paymentTrigger", textId: "paymentTriggerText", badgeId: "paymentCountBadge", listId: "paymentCheckboxList" }
+            ];
+
+            const activeFiltersChips = document.getElementById("activeFiltersChips");
+            const clearAllChipsBtn = document.getElementById("clearAllChipsBtn");
             const resetFiltersBtn = document.getElementById("resetFiltersBtn");
 
+            // Helper to get checked values for a dimension
+            function getSelectedValues(dimKey) {
+                const checked = document.querySelectorAll(`input[data-dim="${dimKey}"]:checked`);
+                return Array.from(checked).map(cb => cb.value);
+            }
+
+            // Helper to get all checkboxes for a dimension
+            function getAllCheckboxes(dimKey) {
+                return Array.from(document.querySelectorAll(`input[data-dim="${dimKey}"]`));
+            }
+
+            // Update UI for a single slicer (trigger label & count badge)
+            function updateSlicerUI(dim) {
+                const all = getAllCheckboxes(dim.key);
+                const selected = all.filter(cb => cb.checked).map(cb => cb.value);
+                const total = all.length;
+                const badgeEl = document.getElementById(dim.badgeId);
+                const textEl = document.getElementById(dim.textId);
+
+                if (selected.length === total) {
+                    if (badgeEl) badgeEl.innerText = `All (${total})`;
+                    if (textEl) textEl.innerText = `All ${dim.name}s`;
+                } else if (selected.length === 0) {
+                    if (badgeEl) badgeEl.innerText = `0 Selected`;
+                    if (textEl) textEl.innerText = `None Selected`;
+                } else if (selected.length <= 2) {
+                    if (badgeEl) badgeEl.innerText = `${selected.length} Selected`;
+                    if (textEl) textEl.innerText = selected.join(", ");
+                } else {
+                    if (badgeEl) badgeEl.innerText = `${selected.length} Selected`;
+                    if (textEl) textEl.innerText = `${selected.length} ${dim.name}s Selected`;
+                }
+            }
+
+            // Update Active Filter Chips Bar
+            function updateActiveFilterChips() {
+                if (!activeFiltersChips) return;
+                let anyFilterActive = false;
+                let chipsHtml = "";
+
+                dimensions.forEach(dim => {
+                    const all = getAllCheckboxes(dim.key);
+                    const selected = all.filter(cb => cb.checked).map(cb => cb.value);
+                    const total = all.length;
+
+                    if (selected.length < total) {
+                        anyFilterActive = true;
+                        if (selected.length === 0) {
+                            chipsHtml += `
+                                <div class="filter-chip" data-dim="${dim.key}">
+                                    <span class="chip-label"><strong>${dim.name}:</strong> <em>None</em></span>
+                                </div>
+                            `;
+                        } else {
+                            selected.forEach(val => {
+                                chipsHtml += `
+                                    <div class="filter-chip" data-dim="${dim.key}" data-val="${encodeURIComponent(val)}">
+                                        <span class="chip-label"><strong>${dim.name}:</strong> ${val}</span>
+                                        <button type="button" class="chip-remove" data-dim="${dim.key}" data-val="${encodeURIComponent(val)}" aria-label="Remove ${val} filter">×</button>
+                                    </div>
+                                `;
+                            });
+                        }
+                    }
+                });
+
+                if (anyFilterActive) {
+                    activeFiltersChips.innerHTML = chipsHtml;
+                    if (clearAllChipsBtn) clearAllChipsBtn.style.display = "inline-flex";
+
+                    // Bind remove click events
+                    activeFiltersChips.querySelectorAll(".chip-remove").forEach(btn => {
+                        btn.addEventListener("click", (e) => {
+                            e.stopPropagation();
+                            const dimKey = btn.getAttribute("data-dim");
+                            const val = decodeURIComponent(btn.getAttribute("data-val"));
+                            const targetCb = document.querySelector(`input[data-dim="${dimKey}"][value="${val}"]`);
+                            if (targetCb) {
+                                targetCb.checked = false;
+                                const dimObj = dimensions.find(d => d.key === dimKey);
+                                if (dimObj) updateSlicerUI(dimObj);
+                                updateActiveFilterChips();
+                                applySlicers();
+                            }
+                        });
+                    });
+                } else {
+                    activeFiltersChips.innerHTML = `
+                        <span class="no-filter-tag">
+                            <i data-lucide="check-circle-2"></i> Showing all data across all dimensions
+                        </span>
+                    `;
+                    if (clearAllChipsBtn) clearAllChipsBtn.style.display = "none";
+                    if (window.lucide) window.lucide.createIcons();
+                }
+            }
+
+            // Fetch and apply slicer data
+            let fetchAbortController = null;
             async function applySlicers() {
-                const cat = categorySlicer.value;
-                const city = citySlicer.value;
-                const status = statusSlicer.value;
+                if (fetchAbortController) {
+                    fetchAbortController.abort();
+                }
+                fetchAbortController = new AbortController();
+
+                const params = new URLSearchParams();
+
+                dimensions.forEach(dim => {
+                    const all = getAllCheckboxes(dim.key);
+                    const selected = all.filter(cb => cb.checked).map(cb => cb.value);
+                    const total = all.length;
+
+                    if (selected.length === total) {
+                        // All selected, no filter clause needed
+                    } else if (selected.length === 0) {
+                        // None selected - filter for impossible placeholder so query returns empty
+                        params.append(dim.key, "__NONE__");
+                    } else {
+                        // Multiple or single selected
+                        selected.forEach(val => params.append(dim.key, val));
+                    }
+                });
 
                 try {
-                    const url = `/api/powerbi/data?category=${encodeURIComponent(cat)}&city=${encodeURIComponent(city)}&status=${encodeURIComponent(status)}`;
-                    const res = await fetch(url);
+                    const url = `/api/powerbi/data?${params.toString()}`;
+                    const res = await fetch(url, { signal: fetchAbortController.signal });
                     const freshData = await res.json();
 
                     updateKPIs(freshData.kpis);
                     updateCharts(freshData);
                 } catch (err) {
-                    console.error("Error updating slicers:", err);
+                    if (err.name !== "AbortError") {
+                        console.error("Error updating multi-select slicers:", err);
+                    }
                 }
             }
 
-            categorySlicer.addEventListener("change", applySlicers);
-            citySlicer.addEventListener("change", applySlicers);
-            statusSlicer.addEventListener("change", applySlicers);
+            // Setup Dropdowns, Events, Search, and Quick Actions
+            dimensions.forEach(dim => {
+                const trigger = document.getElementById(dim.triggerId);
+                const dropdown = document.getElementById(dim.dropdownId);
+                const list = document.getElementById(dim.listId);
+                const search = dim.searchId ? document.getElementById(dim.searchId) : null;
 
-            resetFiltersBtn.addEventListener("click", () => {
-                categorySlicer.value = "All";
-                citySlicer.value = "All";
-                statusSlicer.value = "All";
-                applySlicers();
+                // Toggle dropdown open/close
+                if (trigger && dropdown) {
+                    trigger.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        const wasActive = dropdown.classList.contains("active");
+                        // Close all dropdowns
+                        dimensions.forEach(d => {
+                            const other = document.getElementById(d.dropdownId);
+                            if (other) other.classList.remove("active");
+                        });
+                        if (!wasActive) {
+                            dropdown.classList.add("active");
+                            if (search) {
+                                setTimeout(() => search.focus(), 50);
+                            }
+                        }
+                    });
+                }
+
+                // Prevent panel clicks from closing dropdown
+                if (dropdown) {
+                    const panel = dropdown.querySelector(".multi-select-panel");
+                    if (panel) {
+                        panel.addEventListener("click", (e) => e.stopPropagation());
+                    }
+                }
+
+                // Checkbox change listener
+                if (list) {
+                    list.addEventListener("change", (e) => {
+                        if (e.target.matches("input[type='checkbox']")) {
+                            updateSlicerUI(dim);
+                            updateActiveFilterChips();
+                            applySlicers();
+                        }
+                    });
+                }
+
+                // Search filtering
+                if (search && list) {
+                    search.addEventListener("input", () => {
+                        const term = search.value.trim().toLowerCase();
+                        list.querySelectorAll(".checkbox-item").forEach(item => {
+                            const text = (item.getAttribute("data-text") || item.textContent).toLowerCase();
+                            item.style.display = text.includes(term) ? "flex" : "none";
+                        });
+                    });
+                }
             });
+
+            // Handle Quick Action buttons (Select All / Clear) inside dropdown panels
+            document.querySelectorAll(".action-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const action = btn.getAttribute("data-action");
+                    const targetKey = btn.getAttribute("data-target");
+                    const dim = dimensions.find(d => d.key === targetKey);
+                    if (!dim) return;
+
+                    const allCbs = getAllCheckboxes(targetKey);
+                    if (action === "select-all") {
+                        allCbs.forEach(cb => cb.checked = true);
+                    } else if (action === "clear-all") {
+                        allCbs.forEach(cb => cb.checked = false);
+                    }
+
+                    updateSlicerUI(dim);
+                    updateActiveFilterChips();
+                    applySlicers();
+                });
+            });
+
+            // Close dropdowns on clicking outside
+            document.addEventListener("click", () => {
+                dimensions.forEach(d => {
+                    const dd = document.getElementById(d.dropdownId);
+                    if (dd) dd.classList.remove("active");
+                });
+            });
+
+            // Reset All Filters function
+            function resetAllFilters() {
+                dimensions.forEach(dim => {
+                    const allCbs = getAllCheckboxes(dim.key);
+                    allCbs.forEach(cb => cb.checked = true);
+                    if (dim.searchId) {
+                        const s = document.getElementById(dim.searchId);
+                        if (s) {
+                            s.value = "";
+                            const list = document.getElementById(dim.listId);
+                            if (list) list.querySelectorAll(".checkbox-item").forEach(i => i.style.display = "flex");
+                        }
+                    }
+                    updateSlicerUI(dim);
+                });
+                updateActiveFilterChips();
+                applySlicers();
+            }
+
+            if (resetFiltersBtn) {
+                resetFiltersBtn.addEventListener("click", resetAllFilters);
+            }
+            if (clearAllChipsBtn) {
+                clearAllChipsBtn.addEventListener("click", resetAllFilters);
+            }
 
             // DAX Measures Modal
             const daxModal = document.getElementById("daxModal");
@@ -831,12 +1171,12 @@
                     donutChart.update();
 
                     // Update legend
-                    const legendHtml = d.categories.map(cat => `
+                    const legendHtml = d.categories.length > 0 ? d.categories.map(cat => `
                         <div class="legend-item">
                             <span class="legend-cat-name">${cat.Category}</span>
                             <span class="legend-cat-val">₹${(cat.total_sales / 100000).toFixed(1)}L (${cat.share_pct}%)</span>
                         </div>
-                    `).join("");
+                    `).join("") : `<div class="legend-item" style="color: var(--text-muted); font-size: 0.8rem; padding: 10px;">No categories selected</div>`;
                     document.getElementById("categoryLegendList").innerHTML = legendHtml;
                 }
 
@@ -860,7 +1200,7 @@
 
                 // Update customers table
                 if (d.top_customers) {
-                    const tbodyHtml = d.top_customers.map((cust, idx) => `
+                    const tbodyHtml = d.top_customers.length > 0 ? d.top_customers.map((cust, idx) => `
                         <tr>
                             <td><span class="rank-badge rank-${idx + 1}">${idx + 1}</span></td>
                             <td><strong>${cust.Customer_Name}</strong></td>
@@ -868,7 +1208,7 @@
                             <td>${cust.order_count}</td>
                             <td><span class="money-highlight">₹${parseFloat(cust.total_spent).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></td>
                         </tr>
-                    `).join("");
+                    `).join("") : `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px; font-size: 0.85rem;">No customer records match current multi-select filter criteria.</td></tr>`;
                     document.getElementById("topCustomersTableBody").innerHTML = tbodyHtml;
                 }
             }
