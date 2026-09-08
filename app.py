@@ -41,6 +41,12 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "ecommerce-ai-assistant-2025"
 app.config["JSON_SORT_KEYS"] = False
 
 
+@app.route("/favicon.ico")
+def favicon():
+    """Handles browser favicon requests cleanly to prevent 404 in logs."""
+    return "", 204
+
+
 @app.route("/")
 def index():
     """Renders the primary AI Data Assistant analytics chat interface."""
